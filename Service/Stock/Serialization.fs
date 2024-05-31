@@ -49,3 +49,12 @@ let encoderProductsOverview : Encoder<ProductsOverview> = fun productsOverview -
                 "total", Encode.int quantity
             ]
     ]
+    
+let decoderBin: Decoder<Bin> =
+   Decode.object (fun get ->
+       {
+           Identifier = get.Required.Field "Identifier" decoderBinIdentifier
+           Content = get.Optional.Field "Content" decoderPartNumber
+       }
+   )
+   

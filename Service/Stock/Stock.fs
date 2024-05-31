@@ -30,6 +30,20 @@ let productsInStock (next: HttpFunc) (ctx: HttpContext) =
         let productsOverview = Stock.productsInStock dataAccess
         return! ThothSerializer.RespondJson productsOverview Serialization.encoderProductsOverview next ctx 
     }
+    
+let newBin (next: HttpFunc) (ctx: HttpContext) =
+    task {
+        let dataAccess = ctx.GetService<IStockDataAccess> ()
+        let! binData = ThothSerializer.ReadBody ctx Serialization.decoderBin
+        match binData with
+        | Ok bin ->
+            let databaseResponse = Stock.newBin dataAccess bin
+            match databaseResponse with
+            | Some newBin -> return! ThothSerializer.RespondJson newBin Serialization.encoderBin next ctx
+            | None -> return! RequestErrors.badRequest (text "Failed to create a new bin") earlyReturn ctx
+        | Error _ ->
+            return! RequestErrors.badRequest (text "POST body expected to consist of a single bin %d") earlyReturn ctx
+    }
 
 /// Defines URLs for functionality of the Stock component and dispatches HTTP requests to those URLs.
 let handlers : HttpHandler =
@@ -37,4 +51,5 @@ let handlers : HttpHandler =
         GET >=> route "/bins" >=> binOverview
         GET >=> route "/stock" >=> stockOverview
         GET >=> route "/stock/products" >=> productsInStock
+        POST >=> route "/bins" >=> newBin
     ]
